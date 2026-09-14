@@ -259,9 +259,143 @@
             border-color: rgba(16, 185, 129, 0.3);
             background: rgba(16, 185, 129, 0.1);
         }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .field-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .field-control {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .field-control:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+        }
+        .field-control option {
+            background: #1e293b;
+            color: white;
+        }
+        /* Premium Amenities Grid */
+        .amenities-section {
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .amenity-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.25s ease;
+        }
+        .amenity-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+        .amenity-card.active {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.18);
+        }
+        .amenity-card.full-width {
+            grid-column: span 2;
+        }
+        .amenity-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            font-size: 12px;
+            font-weight: 900;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .amenity-card.active .amenity-checkbox {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: #0b0f19;
+        }
+        .amenity-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+        .amenity-card.active .amenity-title {
+            color: #fde68a;
+        }
+        .geo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .gps-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .gps-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: #10b981;
+            color: #34d399;
+        }
         @media(max-width: 900px) {
             .summary-cards { grid-template-columns: 1fr; }
             .main-grid { grid-template-columns: 1fr; }
+            .amenities-grid { grid-template-columns: 1fr; }
+            .amenity-card.full-width { grid-column: span 1; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -275,9 +409,9 @@
                     <i class="fa-solid fa-house-chimney"></i>
                 </div>
                 <div>
-                    <h1 style="margin:0;">AI Real Estate Dashboard</h1>
+                    <h1 style="margin:0;">AI Real Estate Valuation Dashboard</h1>
                     <p style="color: var(--text-muted); font-size: 13px; margin: 4px 0 0 0;">
-                        Trained on <strong>{{ total_dataset_samples|default:"27,911" }}</strong> real property records from Mumbai, Gurgaon, Hyderabad & Kolkata
+                        Trained on <strong>{{ total_dataset_samples|default:"27,911" }}</strong> records across Mumbai, Gurgaon, Hyderabad & Kolkata with Google Maps Precision
                     </p>
                 </div>
             </div>
@@ -334,72 +468,143 @@
 
                     <!-- City Selector -->
                     <div style="margin-bottom: 16px;">
-                        <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 6px;">
-                            <i class="fa-solid fa-city"></i> Select City / Market
+                        <label class="field-label">
+                            <span><i class="fa-solid fa-city"></i> Select City / Market</span>
                         </label>
-                        <select id="city" class="select-field" required>
+                        <select id="city" class="field-control" onchange="onCityChanged()" required>
                             <option value="Mumbai">Mumbai (Navi Mumbai, Thane, MMR)</option>
+                            <option value="Kolkata" selected>Kolkata (South, North, Salt Lake, New Town)</option>
                             <option value="Gurgaon">Gurgaon / Gurugram (Sectors, Golf Course)</option>
                             <option value="Hyderabad">Hyderabad / Secunderabad (Gachibowli, Hitec)</option>
-                            <option value="Kolkata">Kolkata (South, North, Salt Lake, New Town)</option>
                         </select>
                     </div>
 
-                    <div class="input-group">
-                        <input type="text" id="location" placeholder="e.g. Andheri West, Sector 84, Kondapur">
-                        <label for="location">Locality / Area Name (Optional)</label>
-                        <i class="fa-solid fa-map-location-dot icon"></i>
+                    <!-- Locality (Dropdown + Google Places Search) -->
+                    <div style="margin-bottom: 16px;">
+                        <div class="field-label">
+                            <span><i class="fa-solid fa-map-location-dot"></i> LOCALITY</span>
+                            <button type="button" class="gps-btn" onclick="detectGPSLocation()">
+                                <i class="fa-solid fa-crosshairs"></i> Use GPS
+                            </button>
+                        </div>
+                        <select id="locality_select" class="field-control" onchange="onLocalitySelectChanged()">
+                            <!-- Populated dynamically via JS -->
+                        </select>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div class="input-group">
-                            <input type="number" id="sqft" required min="150" max="25000" value="1200">
-                            <label for="sqft">Area (sq ft)</label>
-                            <i class="fa-solid fa-ruler-combined icon"></i>
-                        </div>
-                        <div class="input-group">
-                            <input type="number" id="bedrooms" required min="1" max="10" value="2">
-                            <label for="bedrooms">Bedrooms (BHK)</label>
-                            <i class="fa-solid fa-bed icon"></i>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div class="input-group">
-                            <input type="number" id="bathrooms" required min="1" max="10" value="2">
-                            <label for="bathrooms">Bathrooms</label>
-                            <i class="fa-solid fa-bath icon"></i>
-                        </div>
-                        <div class="input-group">
-                            <input type="number" id="floors" required min="1" max="70" value="12">
-                            <label for="floors">Total Building Floors</label>
-                            <i class="fa-solid fa-layer-group icon"></i>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <input type="number" id="year_built" min="1950" max="2026" placeholder="e.g. 2020">
-                        <label for="year_built">Year Built (Optional)</label>
-                        <i class="fa-regular fa-calendar icon"></i>
+                    <!-- Google Places Autocomplete Address Search -->
+                    <div class="input-group" style="margin-bottom: 8px;">
+                        <input type="text" id="location" placeholder="Search exact street, society or landmark (Google Maps Autocomplete)">
+                        <label for="location">Exact Address / Complex (Google Maps)</label>
+                        <i class="fa-solid fa-magnifying-glass-location icon"></i>
                     </div>
                     
-                    <div class="options" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="parking" checked>
-                            <span class="checkmark"></span>
-                            Reserved Parking
-                        </label>
-                        
-                        <div style="position: relative;">
-                            <select id="furnishing" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; outline: none; appearance: none; cursor: pointer;">
-                                <option style="background: #1e293b" value="Unfurnished">Unfurnished</option>
-                                <option style="background: #1e293b" value="Semi-Furnished">Semi-Furnished</option>
-                                <option style="background: #1e293b" value="Fully Furnished">Fully Furnished</option>
+                    <div id="pin-status" style="margin-bottom: 16px; font-size: 12px; color: #34d399; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span id="pin-status-text">Google Maps coordinate active: New Town, Kolkata (22.5851° N, 88.4682° E)</span>
+                    </div>
+
+                    <!-- Hidden Coordinates -->
+                    <input type="hidden" id="latitude" value="22.5851">
+                    <input type="hidden" id="longitude" value="88.4682">
+
+                    <!-- Configuration & Total Area -->
+                    <div class="form-row">
+                        <div>
+                            <label class="field-label">CONFIGURATION</label>
+                            <select id="bedrooms" class="field-control">
+                                <option value="1">1 BHK</option>
+                                <option value="2" selected>2 BHK</option>
+                                <option value="3">3 BHK</option>
+                                <option value="4">4 BHK</option>
+                                <option value="5">5+ BHK</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">TOTAL AREA (SQ. FT.)</label>
+                            <input type="number" id="sqft" class="field-control" required min="150" max="30000" value="1100">
+                        </div>
+                    </div>
+
+                    <!-- Bathrooms & Furnishing -->
+                    <div class="form-row">
+                        <div>
+                            <label class="field-label">BATHROOMS</label>
+                            <select id="bathrooms" class="field-control">
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5+</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">FURNISHING</label>
+                            <select id="furnishing" class="field-control">
+                                <option value="Unfurnished">Unfurnished</option>
+                                <option value="Semi-Furnished" selected>Semi-Furnished</option>
+                                <option value="Fully Furnished">Fully Furnished</option>
                             </select>
                         </div>
                     </div>
+
+                    <!-- Property Vintage & Total Floors -->
+                    <div class="form-row">
+                        <div>
+                            <label class="field-label">PROPERTY VINTAGE (YEARS)</label>
+                            <input type="number" id="vintage" class="field-control" min="0" max="60" value="2" placeholder="e.g. 2">
+                        </div>
+                        <div>
+                            <label class="field-label">TOTAL BUILDING FLOORS</label>
+                            <input type="number" id="floors" class="field-control" min="1" max="70" value="12">
+                        </div>
+                    </div>
+
+                    <!-- Premium Amenities (Matching 2nd Image) -->
+                    <div class="amenities-section">
+                        <label class="field-label">
+                            <span><i class="fa-solid fa-gem" style="color: #fbbf24;"></i> PREMIUM AMENITIES</span>
+                            <span style="font-size: 11px; color: #fbbf24; text-transform: none; font-weight: 500;">+Value Boost</span>
+                        </label>
+                        <div class="amenities-grid">
+                            <!-- Gated Security (Checked) -->
+                            <div class="amenity-card active" id="card-security" onclick="toggleAmenity('security')">
+                                <div class="amenity-checkbox"><i class="fa-solid fa-check"></i></div>
+                                <span class="amenity-title">GATED SECURITY</span>
+                                <input type="checkbox" id="amenity_security" checked style="display: none;">
+                            </div>
+
+                            <!-- Reserved Parking (Checked) -->
+                            <div class="amenity-card active" id="card-parking" onclick="toggleAmenity('parking')">
+                                <div class="amenity-checkbox"><i class="fa-solid fa-check"></i></div>
+                                <span class="amenity-title">RESERVED PARKING</span>
+                                <input type="checkbox" id="amenity_parking" checked style="display: none;">
+                            </div>
+
+                            <!-- Private Gymnasium (Unchecked) -->
+                            <div class="amenity-card" id="card-gym" onclick="toggleAmenity('gym')">
+                                <div class="amenity-checkbox"><i class="fa-solid fa-check"></i></div>
+                                <span class="amenity-title">PRIVATE GYMNASIUM</span>
+                                <input type="checkbox" id="amenity_gym" style="display: none;">
+                            </div>
+
+                            <!-- Swimming Pool (Unchecked) -->
+                            <div class="amenity-card" id="card-pool" onclick="toggleAmenity('pool')">
+                                <div class="amenity-checkbox"><i class="fa-solid fa-check"></i></div>
+                                <span class="amenity-title">SWIMMING POOL</span>
+                                <input type="checkbox" id="amenity_pool" style="display: none;">
+                            </div>
+
+                            <!-- High-Speed Elevator (Checked, spans 2 columns) -->
+                            <div class="amenity-card active full-width" id="card-elevator" onclick="toggleAmenity('elevator')">
+                                <div class="amenity-checkbox"><i class="fa-solid fa-check"></i></div>
+                                <span class="amenity-title">HIGH-SPEED ELEVATOR</span>
+                                <input type="checkbox" id="amenity_elevator" checked style="display: none;">
+                            </div>
+                        </div>
+                    </div>
                     
-                    <button type="submit" class="login-btn" id="predict-btn">
+                    <button type="submit" class="login-btn" id="predict-btn" style="margin-top: 10px;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Predict Price with ML
                     </button>
                 </form>
@@ -427,7 +632,7 @@
                                         <strong>{{ p.bedrooms }} BHK</strong> • {{ p.sqft }} sqft
                                     </div>
                                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
-                                        {{ p.location }} • {{ p.created_at|date:"d M Y" }}
+                                        {{ p.location }} • {{ p.vintage|default:"2" }}y vintage • {{ p.furnishing }}
                                     </div>
                                 </td>
                                 <td>
@@ -464,7 +669,107 @@
 
     </div>
 
+    <!-- Google Maps JavaScript API with Places Library -->
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+
     <script>
+        // City Localities Database
+        const CITY_LOCALITIES = {
+            'Kolkata': [
+                { name: 'New Town', lat: 22.5851, lng: 88.4682 },
+                { name: 'Rajarhat', lat: 22.6186, lng: 88.4839 },
+                { name: 'Salt Lake (Bidhannagar)', lat: 22.5867, lng: 88.4178 },
+                { name: 'EM Bypass', lat: 22.5186, lng: 88.3970 },
+                { name: 'Joka', lat: 22.4497, lng: 88.3032 },
+                { name: 'Tollygunge', lat: 22.4988, lng: 88.3476 },
+                { name: 'Garia', lat: 22.4640, lng: 88.3832 },
+                { name: 'Alipore', lat: 22.5292, lng: 88.3262 },
+                { name: 'Ballygunge', lat: 22.5280, lng: 88.3653 }
+            ],
+            'Mumbai': [
+                { name: 'Andheri West', lat: 19.1363, lng: 72.8277 },
+                { name: 'Bandra West', lat: 19.0596, lng: 72.8295 },
+                { name: 'Powai', lat: 19.1176, lng: 72.9060 },
+                { name: 'Worli', lat: 19.0178, lng: 72.8178 },
+                { name: 'Kolshet Road (Thane)', lat: 19.2319, lng: 72.9904 },
+                { name: 'Mulund West', lat: 19.1726, lng: 72.9425 },
+                { name: 'Borivali West', lat: 19.2307, lng: 72.8567 },
+                { name: 'Panvel (Navi Mumbai)', lat: 18.9894, lng: 73.1175 }
+            ],
+            'Gurgaon': [
+                { name: 'DLF Phase 2', lat: 28.4862, lng: 77.0864 },
+                { name: 'Sector 54 (Golf Course Rd)', lat: 28.4357, lng: 77.1082 },
+                { name: 'Sector 65', lat: 28.4012, lng: 77.0694 },
+                { name: 'Sector 48 (Sohna Rd)', lat: 28.4194, lng: 77.0427 },
+                { name: 'Sector 102 (Dwarka Expy)', lat: 28.4841, lng: 76.9748 },
+                { name: 'Cyber City', lat: 28.4950, lng: 77.0890 }
+            ],
+            'Hyderabad': [
+                { name: 'Gachibowli', lat: 17.4401, lng: 78.3489 },
+                { name: 'Kondapur', lat: 17.4682, lng: 78.3578 },
+                { name: 'Hitec City', lat: 17.4435, lng: 78.3772 },
+                { name: 'Madhapur', lat: 17.4483, lng: 78.3915 },
+                { name: 'Banjara Hills', lat: 17.4156, lng: 78.4354 },
+                { name: 'Jubilee Hills', lat: 17.4319, lng: 78.4073 }
+            ]
+        };
+
+        function onCityChanged() {
+            const city = document.getElementById('city').value;
+            const select = document.getElementById('locality_select');
+            select.innerHTML = '';
+            
+            const localities = CITY_LOCALITIES[city] || [];
+            localities.forEach((loc, idx) => {
+                const opt = document.createElement('option');
+                opt.value = loc.name;
+                opt.innerText = loc.name;
+                opt.dataset.lat = loc.lat;
+                opt.dataset.lng = loc.lng;
+                if (idx === 0) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            // Set default coordinate & text
+            if (localities.length > 0) {
+                onLocalitySelectChanged();
+            }
+        }
+
+        function onLocalitySelectChanged() {
+            const select = document.getElementById('locality_select');
+            const selectedOpt = select.options[select.selectedIndex];
+            if (!selectedOpt) return;
+
+            const locName = selectedOpt.value;
+            const lat = selectedOpt.dataset.lat;
+            const lng = selectedOpt.dataset.lng;
+
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('location').value = locName;
+
+            updatePinStatus(locName, lat, lng);
+        }
+
+        function updatePinStatus(name, lat, lng) {
+            const statusEl = document.getElementById('pin-status');
+            const textEl = document.getElementById('pin-status-text');
+            statusEl.style.display = 'flex';
+            textEl.innerText = `Google Maps coordinate active: ${name} (${parseFloat(lat).toFixed(4)}° N, ${parseFloat(lng).toFixed(4)}° E)`;
+        }
+
+        function toggleAmenity(name) {
+            const card = document.getElementById('card-' + name);
+            const chk = document.getElementById('amenity_' + name);
+            chk.checked = !chk.checked;
+            if (chk.checked) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        }
+
         function selectModel(modelName) {
             document.getElementById('model_choice').value = modelName;
             const btnXgb = document.getElementById('btn-model-xgb');
@@ -479,26 +784,109 @@
             }
         }
 
+        // Initialize Google Places Autocomplete
+        function initGoogleAutocomplete() {
+            const input = document.getElementById('location');
+            if (!window.google || !google.maps || !google.maps.places) return;
+
+            const autocomplete = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'in' },
+                fields: ['geometry', 'name', 'formatted_address', 'address_components']
+            });
+
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) return;
+
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+
+                // Detect city from address components
+                if (place.address_components) {
+                    for (let c of place.address_components) {
+                        const val = c.long_name.toLowerCase();
+                        if (val.includes('mumbai') || val.includes('thane')) {
+                            document.getElementById('city').value = 'Mumbai';
+                            break;
+                        } else if (val.includes('kolkata') || val.includes('calcutta')) {
+                            document.getElementById('city').value = 'Kolkata';
+                            break;
+                        } else if (val.includes('gurgaon') || val.includes('gurugram')) {
+                            document.getElementById('city').value = 'Gurgaon';
+                            break;
+                        } else if (val.includes('hyderabad') || val.includes('secunderabad')) {
+                            document.getElementById('city').value = 'Hyderabad';
+                            break;
+                        }
+                    }
+                }
+
+                updatePinStatus(place.name || place.formatted_address, lat, lng);
+            });
+        }
+
+        // GPS Auto-detect
+        function detectGPSLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
+            }
+            const statusText = document.getElementById('pin-status-text');
+            statusText.innerText = 'Detecting current GPS position...';
+
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+
+                if (window.google && google.maps && google.maps.Geocoder) {
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ location: { lat, lng } }, function(results, status) {
+                        if (status === 'OK' && results[0]) {
+                            document.getElementById('location').value = results[0].formatted_address;
+                            updatePinStatus(results[0].formatted_address, lat, lng);
+                        } else {
+                            updatePinStatus('Your GPS Location', lat, lng);
+                        }
+                    });
+                } else {
+                    updatePinStatus('Your GPS Location', lat, lng);
+                }
+            }, function(err) {
+                alert('Unable to retrieve location: ' + err.message);
+            });
+        }
+
+        // Form Submit
         document.getElementById('prediction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const btn = document.getElementById('predict-btn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running ML Inference...';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running ML Inference & Geo-Valuation...';
             btn.style.opacity = '0.8';
             btn.style.pointerEvents = 'none';
 
             const payload = {
                 city: document.getElementById('city').value,
-                location: document.getElementById('location').value,
+                location: document.getElementById('location').value || document.getElementById('locality_select').value,
                 sqft: document.getElementById('sqft').value,
                 bedrooms: document.getElementById('bedrooms').value,
                 bathrooms: document.getElementById('bathrooms').value,
                 floors: document.getElementById('floors').value,
-                year_built: document.getElementById('year_built').value,
-                parking: document.getElementById('parking').checked,
+                vintage: document.getElementById('vintage').value,
                 furnishing: document.getElementById('furnishing').value,
-                model_choice: document.getElementById('model_choice').value
+                model_choice: document.getElementById('model_choice').value,
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                parking: document.getElementById('amenity_parking').checked,
+                gated_security: document.getElementById('amenity_security').checked,
+                gymnasium: document.getElementById('amenity_gym').checked,
+                swimming_pool: document.getElementById('amenity_pool').checked,
+                elevator: document.getElementById('amenity_elevator').checked
             };
 
             try {
@@ -511,7 +899,7 @@
                 });
                 const data = await response.json();
                 
-                if(data.success) {
+                if (data.success) {
                     window.location.href = '/result/' + data.prediction_id + '/';
                 } else {
                     alert('Error: ' + data.error);
@@ -534,9 +922,9 @@
                     }
                 });
                 const data = await response.json();
-                if(data.success) {
+                if (data.success) {
                     const row = document.getElementById('row-' + id);
-                    if(row) row.style.opacity = '0';
+                    if (row) row.style.opacity = '0';
                     setTimeout(() => window.location.reload(), 300);
                 } else {
                     alert('Error deleting: ' + data.error);
@@ -546,12 +934,18 @@
             }
         }
 
-        // Format all money fields in Indian format
-        document.querySelectorAll('.money-format').forEach(el => {
-            const val = parseFloat(el.getAttribute('data-val'));
-            if(!isNaN(val)) {
-                el.innerText = '₹' + val.toLocaleString('en-IN', {maximumFractionDigits: 0});
-            }
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            onCityChanged();
+            initGoogleAutocomplete();
+
+            // Format money in Indian currency format
+            document.querySelectorAll('.money-format').forEach(el => {
+                const val = parseFloat(el.getAttribute('data-val'));
+                if (!isNaN(val)) {
+                    el.innerText = '₹' + val.toLocaleString('en-IN', {maximumFractionDigits: 0});
+                }
+            });
         });
     </script>
 </body>

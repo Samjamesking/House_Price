@@ -10,8 +10,17 @@ class Prediction(models.Model):
     bathrooms = models.IntegerField()
     floors = models.IntegerField(default=1)
     year_built = models.IntegerField(null=True, blank=True)
+    vintage = models.IntegerField(default=2)  # Property Vintage in years
     parking = models.BooleanField(default=False)
+    gated_security = models.BooleanField(default=False)
+    gymnasium = models.BooleanField(default=False)
+    swimming_pool = models.BooleanField(default=False)
+    elevator = models.BooleanField(default=False)
     furnishing = models.CharField(max_length=50, default='Unfurnished')
+    
+    # Location coordinates for accurate mapping
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     
     predicted_price = models.DecimalField(max_digits=14, decimal_places=2)
     alt_model_price = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
