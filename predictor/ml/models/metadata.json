@@ -1,0 +1,113 @@
+{
+  "trained_at": "2026-09-14 23:45:55",
+  "total_samples": 27911,
+  "cities": [
+    "Gurgaon",
+    "Hyderabad",
+    "Kolkata",
+    "Mumbai"
+  ],
+  "feature_columns": [
+    "sqft",
+    "bedrooms",
+    "bathrooms",
+    "total_floors",
+    "floor_num",
+    "parking",
+    "age",
+    "city_Gurgaon",
+    "city_Hyderabad",
+    "city_Kolkata",
+    "city_Mumbai",
+    "furnishing_Fully Furnished",
+    "furnishing_Semi-Furnished",
+    "furnishing_Unfurnished"
+  ],
+  "numeric_columns": [
+    "sqft",
+    "bedrooms",
+    "bathrooms",
+    "total_floors",
+    "floor_num",
+    "parking",
+    "age"
+  ],
+  "categorical_columns": [
+    "city",
+    "furnishing"
+  ],
+  "metrics": {
+    "random_forest": {
+      "name": "Random Forest Regressor",
+      "r2_score": 0.8884,
+      "mae": 5385201.57,
+      "rmse": 14266894.75,
+      "train_time_sec": 0.64,
+      "feature_importances": {
+        "sqft": 0.606,
+        "bedrooms": 0.0145,
+        "bathrooms": 0.0603,
+        "total_floors": 0.0838,
+        "floor_num": 0.0132,
+        "parking": 0.0035,
+        "age": 0.0137,
+        "city_Gurgaon": 0.0098,
+        "city_Hyderabad": 0.0058,
+        "city_Kolkata": 0.1181,
+        "city_Mumbai": 0.0627,
+        "furnishing_Fully Furnished": 0.0018,
+        "furnishing_Semi-Furnished": 0.002,
+        "furnishing_Unfurnished": 0.0049
+      }
+    },
+    "xgboost": {
+      "name": "XGBoost Regressor",
+      "r2_score": 0.8693,
+      "mae": 6224842.64,
+      "rmse": 14979219.14,
+      "train_time_sec": 0.37,
+      "feature_importances": {
+        "sqft": 0.1247,
+        "bedrooms": 0.0472,
+        "bathrooms": 0.198,
+        "total_floors": 0.0277,
+        "floor_num": 0.0075,
+        "parking": 0.0053,
+        "age": 0.0093,
+        "city_Gurgaon": 0.0393,
+        "city_Hyderabad": 0.0315,
+        "city_Kolkata": 0.3415,
+        "city_Mumbai": 0.1363,
+        "furnishing_Fully Furnished": 0.0072,
+        "furnishing_Semi-Furnished": 0.0052,
+        "furnishing_Unfurnished": 0.0193
+      }
+    }
+  },
+  "city_stats": {
+    "Gurgaon": {
+      "avg_price": 32417717.41,
+      "median_price": 22500007.0,
+      "avg_sqft": 2333.2,
+      "total_count": 9899
+    },
+    "Hyderabad": {
+      "avg_price": 20241348.96,
+      "median_price": 13000000.0,
+      "avg_sqft": 2059.7,
+      "total_count": 4944
+    },
+    "Kolkata": {
+      "avg_price": 9615172.82,
+      "median_price": 6134500.0,
+      "avg_sqft": 1288.5,
+      "total_count": 6530
+    },
+    "Mumbai": {
+      "avg_price": 28363564.97,
+      "median_price": 17192500.0,
+      "avg_sqft": 1009.4,
+      "total_count": 6538
+    }
+  }
+}

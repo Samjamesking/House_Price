@@ -1,0 +1,150 @@
+import json
+import random
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Prediction
+from .ml.service import MLPredictorService
+
+def login_view(request):
+    if request.method == 'POST':
+        return redirect('dashboard')
+    return render(request, 'predictor/login.html')
+
+def register_view(request):
+    if request.method == 'POST':
+        return redirect('login')
+    return render(request, 'predictor/register.html')
+
+def dashboard_view(request):
+    predictions = Prediction.objects.all().order_by('-created_at')
+    total_predictions = predictions.count()
+    
+    if total_predictions > 0:
+        avg_price = sum(float(p.predicted_price) for p in predictions) / total_predictions
+    else:
+        avg_price = 0
+        
+    service = MLPredictorService.get_instance()
+    meta = service.metadata or {}
+    metrics = meta.get('metrics', {})
+
+    context = {
+        'total_predictions': total_predictions,
+        'avg_price': avg_price,
+        'predictions': predictions[:10],
+        'rf_metrics': metrics.get('random_forest', {}),
+        'xgb_metrics': metrics.get('xgboost', {}),
+        'total_dataset_samples': meta.get('total_samples', 27911)
+    }
+    return render(request, 'predictor/dashboard.html', context)
+
+def result_view(request, prediction_id):
+    prediction = get_object_or_404(Prediction, id=prediction_id)
+    service = MLPredictorService.get_instance()
+    
+    # Run service to obtain model comparison, actual comparables, and real trend curve
+    ml_result = service.predict(
+        city_input=prediction.city,
+        sqft=prediction.sqft,
+        bedrooms=prediction.bedrooms,
+        bathrooms=prediction.bathrooms,
+        floors=prediction.floors,
+        year_built=prediction.year_built,
+        parking=prediction.parking,
+        furnishing=prediction.furnishing,
+        model_choice=prediction.model_used,
+        location_name=prediction.location
+    )
+    
+    margin = (100 - prediction.confidence_score) / 100 * float(prediction.predicted_price)
+    min_price = max(100000, float(prediction.predicted_price) - margin)
+    max_price = float(prediction.predicted_price) + margin
+
+    context = {
+        'prediction': prediction,
+        'min_price': min_price,
+        'max_price': max_price,
+        'alt_model_name': ml_result['alt_model_name'],
+        'alt_predicted_price': ml_result['alt_predicted_price'],
+        'model_diff_percent': ml_result['model_diff_percent'],
+        'model_metrics': ml_result['model_metrics'],
+        'similar_houses': ml_result['similar_houses'],
+        'trend_data': json.dumps(ml_result['trend_data']),
+    }
+    return render(request, 'predictor/result.html', context)
+
+@csrf_exempt
+def predict_api(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            city = data.get('city', 'Mumbai')
+            location = data.get('location', '').strip() or f'{city} City Center'
+            sqft = float(data.get('sqft', 1000))
+            bedrooms = int(data.get('bedrooms', 2))
+            bathrooms = int(data.get('bathrooms', bedrooms))
+            floors = int(data.get('floors', 1))
+            year_built = data.get('year_built')
+            year_built = int(year_built) if year_built else None
+            parking = bool(data.get('parking'))
+            furnishing = data.get('furnishing', 'Unfurnished')
+            model_choice = data.get('model_choice', 'xgboost')
+            
+            service = MLPredictorService.get_instance()
+            ml_res = service.predict(
+                city_input=city,
+                sqft=sqft,
+                bedrooms=bedrooms,
+                bathrooms=bathrooms,
+                floors=floors,
+                year_built=year_built,
+                parking=parking,
+                furnishing=furnishing,
+                model_choice=model_choice,
+                location_name=location
+            )
+            
+            # Save to database
+            prediction = Prediction.objects.create(
+                city=ml_res['city'],
+                location=location,
+                model_used=ml_res['model_used'],
+                sqft=int(sqft),
+                bedrooms=bedrooms,
+                bathrooms=bathrooms,
+                floors=floors,
+                year_built=year_built,
+                parking=parking,
+                furnishing=furnishing,
+                predicted_price=ml_res['predicted_price'],
+                alt_model_price=ml_res['alt_predicted_price'],
+                confidence_score=ml_res['confidence_score']
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'prediction_id': prediction.id,
+                'predicted_price': ml_res['predicted_price'],
+                'alt_model_name': ml_res['alt_model_name'],
+                'alt_predicted_price': ml_res['alt_predicted_price'],
+                'confidence_score': ml_res['confidence_score'],
+                'model_used': ml_res['model_used'],
+                'city': ml_res['city']
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_prediction(request, prediction_id):
+    if request.method in ['POST', 'DELETE']:
+        try:
+            prediction = get_object_or_404(Prediction, id=prediction_id)
+            prediction.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid method'})

@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction - Login</title>
+    <link rel="stylesheet" href="{% static 'predictor/css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fa-solid fa-house-chimney"></i>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Enter your details to access the prediction models</p>
+        </div>
+        <form class="login-form" method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="email" id="email" required>
+                <label for="email">Email address</label>
+                <i class="fa-regular fa-envelope icon"></i>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" required>
+                <label for="password">Password</label>
+                <i class="fa-solid fa-lock icon"></i>
+            </div>
+            <div class="options">
+                <label class="checkbox-container">
+                    <input type="checkbox">
+                    <span class="checkmark"></span>
+                    Remember me
+                </label>
+                <a href="#" class="forgot-password">Forgot password?</a>
+            </div>
+            <button type="submit" class="login-btn">Sign In</button>
+            <p class="register-link">Don't have an account? <a href="{% url 'register' %}">Create one</a></p>
+        </form>
+    </div>
+    <script>
+        document.querySelector('.login-form').addEventListener('submit', (e) => {
+            const btn = document.querySelector('.login-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Logging in...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+        });
+    </script>
+</body>
+</html>

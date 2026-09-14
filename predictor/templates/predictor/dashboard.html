@@ -1,0 +1,558 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction - Dashboard (XGBoost & Random Forest)</title>
+    <link rel="stylesheet" href="{% static 'predictor/css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            width: 100%;
+            max-width: 1280px;
+            padding: 40px;
+            margin: 30px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 24px 32px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+        }
+        .dashboard-header h1 {
+            font-size: 24px;
+        }
+        .logout-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), #34d399);
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .card-icon.rf {
+            background: linear-gradient(135deg, #059669, #10b981);
+        }
+        .card-icon.xgb {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+        .card-content h3 {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card-content p {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .card-content .subtext {
+            font-size: 12px;
+            color: var(--primary);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 24px;
+        }
+        .panel {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+        }
+        .panel h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .model-selector-group {
+            margin-bottom: 20px;
+        }
+        .model-selector-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 500;
+        }
+        .model-toggle-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .model-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 12px 14px;
+            border-radius: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .model-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .model-btn.active {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.12);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+        }
+        .model-btn.active.xgb {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+        }
+        .model-name {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .model-badge {
+            font-size: 11px;
+            color: var(--primary);
+            background: rgba(16, 185, 129, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .model-badge.xgb {
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.15);
+        }
+        .select-field {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 16px;
+        }
+        .select-field option {
+            background: #1e293b;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 13px;
+        }
+        td {
+            font-size: 14px;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-xgb {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        .badge-rf {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+        .badge-city {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            margin-right: 4px;
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .delete-btn:hover {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .rerun-btn:hover {
+            color: var(--primary);
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        @media(max-width: 900px) {
+            .summary-cards { grid-template-columns: 1fr; }
+            .main-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="dashboard-container">
+        
+        <header class="dashboard-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="logo" style="margin: 0; width: 48px; height: 48px; font-size: 20px;">
+                    <i class="fa-solid fa-house-chimney"></i>
+                </div>
+                <div>
+                    <h1 style="margin:0;">AI Real Estate Dashboard</h1>
+                    <p style="color: var(--text-muted); font-size: 13px; margin: 4px 0 0 0;">
+                        Trained on <strong>{{ total_dataset_samples|default:"27,911" }}</strong> real property records from Mumbai, Gurgaon, Hyderabad & Kolkata
+                    </p>
+                </div>
+            </div>
+            <a href="{% url 'login' %}" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+        </header>
+
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="card-content">
+                    <h3>Total Predictions</h3>
+                    <p>{{ total_predictions }}</p>
+                    <div class="subtext">Active SQLite History</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon xgb"><i class="fa-solid fa-bolt"></i></div>
+                <div class="card-content">
+                    <h3>XGBoost Model</h3>
+                    <p>86.9% <span style="font-size: 14px; font-weight: 500; color: #fbbf24;">R² Score</span></p>
+                    <div class="subtext" style="color: #fbbf24;">Gradient Boosted Trees</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon rf"><i class="fa-solid fa-tree"></i></div>
+                <div class="card-content">
+                    <h3>Random Forest</h3>
+                    <p>88.8% <span style="font-size: 14px; font-weight: 500; color: #34d399;">R² Score</span></p>
+                    <div class="subtext" style="color: #34d399;">120 Ensembled Trees</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <h2><i class="fa-solid fa-calculator"></i> Predict Property Price</h2>
+                
+                <form id="prediction-form">
+                    <!-- Model Selection Toggle -->
+                    <div class="model-selector-group">
+                        <label class="model-selector-label"><i class="fa-solid fa-microchip"></i> Choose Prediction Model</label>
+                        <div class="model-toggle-container">
+                            <button type="button" class="model-btn active xgb" id="btn-model-xgb" onclick="selectModel('xgboost')">
+                                <div class="model-name"><i class="fa-solid fa-bolt" style="color: #fbbf24;"></i> XGBoost</div>
+                                <div class="model-badge xgb">R²: 86.9% • Fast</div>
+                            </button>
+                            <button type="button" class="model-btn" id="btn-model-rf" onclick="selectModel('random_forest')">
+                                <div class="model-name"><i class="fa-solid fa-tree" style="color: #10b981;"></i> Random Forest</div>
+                                <div class="model-badge">R²: 88.8% • Top Fit</div>
+                            </button>
+                        </div>
+                        <input type="hidden" id="model_choice" value="xgboost">
+                    </div>
+
+                    <!-- City Selector -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 6px;">
+                            <i class="fa-solid fa-city"></i> Select City / Market
+                        </label>
+                        <select id="city" class="select-field" required>
+                            <option value="Mumbai">Mumbai (Navi Mumbai, Thane, MMR)</option>
+                            <option value="Gurgaon">Gurgaon / Gurugram (Sectors, Golf Course)</option>
+                            <option value="Hyderabad">Hyderabad / Secunderabad (Gachibowli, Hitec)</option>
+                            <option value="Kolkata">Kolkata (South, North, Salt Lake, New Town)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="location" placeholder="e.g. Andheri West, Sector 84, Kondapur">
+                        <label for="location">Locality / Area Name (Optional)</label>
+                        <i class="fa-solid fa-map-location-dot icon"></i>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="input-group">
+                            <input type="number" id="sqft" required min="150" max="25000" value="1200">
+                            <label for="sqft">Area (sq ft)</label>
+                            <i class="fa-solid fa-ruler-combined icon"></i>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="bedrooms" required min="1" max="10" value="2">
+                            <label for="bedrooms">Bedrooms (BHK)</label>
+                            <i class="fa-solid fa-bed icon"></i>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="input-group">
+                            <input type="number" id="bathrooms" required min="1" max="10" value="2">
+                            <label for="bathrooms">Bathrooms</label>
+                            <i class="fa-solid fa-bath icon"></i>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="floors" required min="1" max="70" value="12">
+                            <label for="floors">Total Building Floors</label>
+                            <i class="fa-solid fa-layer-group icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="number" id="year_built" min="1950" max="2026" placeholder="e.g. 2020">
+                        <label for="year_built">Year Built (Optional)</label>
+                        <i class="fa-regular fa-calendar icon"></i>
+                    </div>
+                    
+                    <div class="options" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="parking" checked>
+                            <span class="checkmark"></span>
+                            Reserved Parking
+                        </label>
+                        
+                        <div style="position: relative;">
+                            <select id="furnishing" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; outline: none; appearance: none; cursor: pointer;">
+                                <option style="background: #1e293b" value="Unfurnished">Unfurnished</option>
+                                <option style="background: #1e293b" value="Semi-Furnished">Semi-Furnished</option>
+                                <option style="background: #1e293b" value="Fully Furnished">Fully Furnished</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" id="predict-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Predict Price with ML
+                    </button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Predictions</h2>
+                {% if predictions %}
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Property Details</th>
+                                <th>Model</th>
+                                <th>Predicted Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in predictions %}
+                            <tr id="row-{{ p.id }}" style="transition: opacity 0.3s;">
+                                <td>
+                                    <div>
+                                        <span class="badge badge-city">{{ p.city }}</span>
+                                        <strong>{{ p.bedrooms }} BHK</strong> • {{ p.sqft }} sqft
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                                        {{ p.location }} • {{ p.created_at|date:"d M Y" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if "xgb" in p.model_used|lower %}
+                                    <span class="badge badge-xgb"><i class="fa-solid fa-bolt"></i> XGB</span>
+                                    {% else %}
+                                    <span class="badge badge-rf"><i class="fa-solid fa-tree"></i> RF</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-weight: 600;" class="money-format" data-val="{{ p.predicted_price|floatformat:2 }}">₹{{ p.predicted_price|floatformat:2 }}</td>
+                                <td>
+                                    <div style="display: flex; gap: 6px;">
+                                        <a href="{% url 'result' p.id %}" class="action-btn rerun-btn" title="View Full Report & Comparisons">
+                                            <i class="fa-solid fa-eye"></i> View
+                                        </a>
+                                        <button type="button" onclick="deletePrediction({{ p.id }})" class="action-btn delete-btn" title="Delete">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted); text-align: center; margin-top: 60px;">
+                    <i class="fa-solid fa-inbox" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+                    No predictions made yet. Try your first prediction with XGBoost or Random Forest!
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function selectModel(modelName) {
+            document.getElementById('model_choice').value = modelName;
+            const btnXgb = document.getElementById('btn-model-xgb');
+            const btnRf = document.getElementById('btn-model-rf');
+            
+            if (modelName === 'xgboost') {
+                btnXgb.classList.add('active', 'xgb');
+                btnRf.classList.remove('active');
+            } else {
+                btnRf.classList.add('active');
+                btnXgb.classList.remove('active', 'xgb');
+            }
+        }
+
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('predict-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running ML Inference...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+
+            const payload = {
+                city: document.getElementById('city').value,
+                location: document.getElementById('location').value,
+                sqft: document.getElementById('sqft').value,
+                bedrooms: document.getElementById('bedrooms').value,
+                bathrooms: document.getElementById('bathrooms').value,
+                floors: document.getElementById('floors').value,
+                year_built: document.getElementById('year_built').value,
+                parking: document.getElementById('parking').checked,
+                furnishing: document.getElementById('furnishing').value,
+                model_choice: document.getElementById('model_choice').value
+            };
+
+            try {
+                const response = await fetch('{% url "predict_api" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                if(data.success) {
+                    window.location.href = '/result/' + data.prediction_id + '/';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Network error occurred.');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        });
+
+        async function deletePrediction(id) {
+            try {
+                const response = await fetch(`/api/delete/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if(data.success) {
+                    const row = document.getElementById('row-' + id);
+                    if(row) row.style.opacity = '0';
+                    setTimeout(() => window.location.reload(), 300);
+                } else {
+                    alert('Error deleting: ' + data.error);
+                }
+            } catch(e) {
+                alert('Network error.');
+            }
+        }
+
+        // Format all money fields in Indian format
+        document.querySelectorAll('.money-format').forEach(el => {
+            const val = parseFloat(el.getAttribute('data-val'));
+            if(!isNaN(val)) {
+                el.innerText = '₹' + val.toLocaleString('en-IN', {maximumFractionDigits: 0});
+            }
+        });
+    </script>
+</body>
+</html>

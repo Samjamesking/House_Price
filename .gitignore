@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pycache
+
+# Virtual Environment
+venv/
+env/
+.env
+.venv
+
+# Django
+*.sqlite3
+db.sqlite3
+*.log
+local_settings.py
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Migrations (optional - remove these lines if you want to include migrations)
+# predictor/migrations/
+
+# Static files collected
+staticfiles/
+static_collected/

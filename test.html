@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction - Dashboard</title>
+    <link rel="stylesheet" href="/static/predictor/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 40px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 24px 32px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+        }
+        .dashboard-header h1 {
+            font-size: 24px;
+        }
+        .logout-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .card {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), #34d399);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+        .card-content h3 {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .card-content p {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .panel {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+        }
+        .panel h2 {
+            font-size: 20px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        .prediction-result {
+            margin-top: 24px;
+            padding: 24px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            display: none;
+        }
+        .prediction-result h3 {
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .prediction-result .price {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .prediction-result .confidence {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 0;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        td {
+            font-size: 15px;
+        }
+        .badge {
+            padding: 4px 8px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .delete-btn:hover {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .rerun-btn:hover {
+            color: var(--primary);
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="dashboard-container">
+        
+        <header class="dashboard-header">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="logo" style="margin: 0; width: 48px; height: 48px; font-size: 20px;">
+                    <i class="fa-solid fa-house-chimney"></i>
+                </div>
+                <h1>Welcome to your Dashboard</h1>
+            </div>
+            <a href="/" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+        </header>
+
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="card-content">
+                    <h3>Total Predictions</h3>
+                    <p>8</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="card-content">
+                    <h3>Average Predicted Price</h3>
+                    <p class="money-format" data-val="389514.18">₹389514.18</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <h2><i class="fa-solid fa-calculator"></i> Predict New Price</h2>
+                <form id="prediction-form">
+                    <div class="input-group">
+                        <input type="text" id="location" required>
+                        <label for="location">Location (City/Area)</label>
+                        <i class="fa-solid fa-map-location-dot icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="sqft" required min="100">
+                        <label for="sqft">Square Footage (sq ft)</label>
+                        <i class="fa-solid fa-ruler-combined icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="bedrooms" required min="1">
+                        <label for="bedrooms">BHK (Bedrooms)</label>
+                        <i class="fa-solid fa-bed icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="bathrooms" required min="1">
+                        <label for="bathrooms">Bathrooms</label>
+                        <i class="fa-solid fa-bath icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="floors" required min="1" value="1">
+                        <label for="floors">Floors</label>
+                        <i class="fa-solid fa-layer-group icon"></i>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="year_built" min="1800" max="2026">
+                        <label for="year_built">Year Built (Optional)</label>
+                        <i class="fa-regular fa-calendar icon"></i>
+                    </div>
+                    
+                    <div class="options" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="parking">
+                            <span class="checkmark"></span>
+                            Parking Available
+                        </label>
+                        
+                        <div style="position: relative;">
+                            <select id="furnishing" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; outline: none; appearance: none; cursor: pointer;">
+                                <option style="background: #1e293b" value="Unfurnished">Unfurnished</option>
+                                <option style="background: #1e293b" value="Semi-Furnished">Semi-Furnished</option>
+                                <option style="background: #1e293b" value="Fully Furnished">Fully Furnished</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" id="predict-btn">Predict Price</button>
+                </form>
+
+                <div class="prediction-result" id="prediction-result">
+                    <h3>Estimated Value</h3>
+                    <div class="price" id="result-price">$0.00</div>
+                    <div class="confidence">Confidence Score: <span id="result-confidence">0</span>%</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> Recent Predictions</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Inputs (BHK, Area, Location)</th>
+                            <th>Predicted Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr id="row-9" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>2 BHK • 500 sqft • baranagar , kolkata</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="186736.24">₹186736.24</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/9/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(9)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-8" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>2 BHK • 500 sqft • kolkata, new town</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="195845.33">₹195845.33</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/8/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(8)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-6" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>3 BHK • 1800 sqft • Bangalore</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="548720.68">₹548720.68</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/6/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(6)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-5" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>3 BHK • 1800 sqft • Bangalore</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="473096.89">₹473096.89</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/5/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(5)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-4" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>2 BHK • 450 sqft • Downtown</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="300884.09">₹300884.09</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/4/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(4)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-3" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>4 BHK • 3000 sqft • Downtown</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="748829.87">₹748829.87</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/3/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(3)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-2" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>2 BHK • 130 sqft • Unknown</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="125441.01">₹125441.01</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/2/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(2)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr id="row-1" style="transition: opacity 0.3s;">
+                            <td>03 May 2026</td>
+                            <td>4 BHK • 2500 sqft • Unknown</td>
+                            <td style="font-weight: 600;" class="money-format" data-val="536559.36">₹536559.36</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="/result/1/" class="action-btn rerun-btn" title="Re-run Prediction">
+                                        <i class="fa-solid fa-rotate-right"></i> Re-run
+                                    </a>
+                                    <button type="button" onclick="deletePrediction(1)" class="action-btn delete-btn" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+                
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('predict-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+
+            const payload = {
+                location: document.getElementById('location').value,
+                sqft: document.getElementById('sqft').value,
+                bedrooms: document.getElementById('bedrooms').value,
+                bathrooms: document.getElementById('bathrooms').value,
+                floors: document.getElementById('floors').value,
+                year_built: document.getElementById('year_built').value,
+                parking: document.getElementById('parking').checked,
+                furnishing: document.getElementById('furnishing').value
+            };
+
+            try {
+                const response = await fetch('/api/predict/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                if(data.success) {
+                    window.location.href = '/result/' + data.prediction_id + '/';
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Network error occurred.');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        });
+
+        async function deletePrediction(id) {
+            if(!confirm('Are you sure you want to delete this prediction?')) return;
+            
+            try {
+                const response = await fetch(`/api/delete/${id}/`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if(data.success) {
+                    const row = document.getElementById('row-' + id);
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                } else {
+                    alert('Error deleting: ' + data.error);
+                }
+            } catch(e) {
+                alert('Network error.');
+            }
+        }
+
+        // Format all money fields in Indian format
+        document.querySelectorAll('.money-format').forEach(el => {
+            const val = parseFloat(el.getAttribute('data-val'));
+            if(!isNaN(val)) {
+                el.innerText = '₹' + val.toLocaleString('en-IN', {maximumFractionDigits: 0});
+            }
+        });
+    </script>
+</body>
+</html>
