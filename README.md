@@ -63,7 +63,7 @@ python manage.py runserver
 ```
 
 ### Access the App
-Open your browser and go to: **http://localhost:8000**
+Open your browser and go to: **https://house-price-4-tjp2.onrender.com**
 
 ---
 
